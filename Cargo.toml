@@ -2,7 +2,7 @@
 name = "hashlink"
 version = "0.10.0"
 authors = ["kyren <kerriganw@gmail.com>"]
-edition = "2018"
+edition = "2021"
 description = "HashMap-like containers that hold their key-value pairs in a user controllable order"
 repository = "https://github.com/kyren/hashlink"
 documentation = "https://docs.rs/hashlink"
@@ -15,7 +15,7 @@ rust-version = "1.65"
 circle-ci = { repository = "kyren/hashlink", branch = "master" }
 
 [features]
-serde_impl = ["serde"]
+serde_impl = ["dep:serde"]
 
 [dependencies]
 hashbrown = { version = "0.15", default-features = false, features = ["default-hasher", "inline-more"] }

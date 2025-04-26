@@ -20,7 +20,6 @@ where
     V: Serialize,
     S: BuildHasher,
 {
-    #[inline]
     fn serialize<T: Serializer>(&self, serializer: T) -> Result<T::Ok, T::Error> {
         let mut map_serializer = serializer.serialize_map(Some(self.len()))?;
         for (k, v) in self {
@@ -39,7 +38,7 @@ where
 {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         #[derive(Debug)]
-        pub struct LinkedHashMapVisitor<K, V, S> {
+        struct LinkedHashMapVisitor<K, V, S> {
             marker: PhantomData<LinkedHashMap<K, V, S>>,
         }
 
@@ -95,7 +94,6 @@ where
     T: Serialize + Eq + Hash,
     S: BuildHasher,
 {
-    #[inline]
     fn serialize<U: Serializer>(&self, serializer: U) -> Result<U::Ok, U::Error> {
         let mut seq_serializer = serializer.serialize_seq(Some(self.len()))?;
         for v in self {
@@ -112,7 +110,7 @@ where
 {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         #[derive(Debug)]
-        pub struct LinkedHashSetVisitor<T, S> {
+        struct LinkedHashSetVisitor<T, S> {
             marker: PhantomData<LinkedHashSet<T, S>>,
         }
 
