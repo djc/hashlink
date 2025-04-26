@@ -18,7 +18,6 @@ pub struct LruCache<K, V, S = DefaultHashBuilder> {
 }
 
 impl<K: Eq + Hash, V> LruCache<K, V> {
-    #[inline]
     pub fn new(capacity: usize) -> Self {
         LruCache {
             map: LinkedHashMap::new(),
@@ -29,14 +28,12 @@ impl<K: Eq + Hash, V> LruCache<K, V> {
     /// Create a new unbounded `LruCache` that does not automatically evict entries.
     ///
     /// A simple convenience method that is equivalent to `LruCache::new(usize::MAX)`
-    #[inline]
     pub fn new_unbounded() -> Self {
         LruCache::new(usize::MAX)
     }
 }
 
 impl<K, V, S> LruCache<K, V, S> {
-    #[inline]
     pub fn with_hasher(capacity: usize, hash_builder: S) -> Self {
         LruCache {
             map: LinkedHashMap::with_hasher(hash_builder),
@@ -59,27 +56,22 @@ impl<K, V, S> LruCache<K, V, S> {
         self.map.is_empty()
     }
 
-    #[inline]
     pub fn clear(&mut self) {
         self.map.clear();
     }
 
-    #[inline]
     pub fn iter(&self) -> Iter<K, V> {
         self.map.iter()
     }
 
-    #[inline]
     pub fn iter_mut(&mut self) -> IterMut<K, V> {
         self.map.iter_mut()
     }
 
-    #[inline]
     pub fn drain(&mut self) -> Drain<K, V> {
         self.map.drain()
     }
 
-    #[inline]
     pub fn retain<F>(&mut self, f: F)
     where
         F: FnMut(&K, &mut V) -> bool,
@@ -221,7 +213,6 @@ where
     ///
     /// If there are more entries in the `LruCache` than the new capacity will allow, they are
     /// removed.
-    #[inline]
     pub fn set_capacity(&mut self, capacity: usize) {
         for _ in capacity..self.len() {
             self.remove_lru();
@@ -239,7 +230,6 @@ where
 }
 
 impl<K: Hash + Eq + Clone, V: Clone, S: BuildHasher + Clone> Clone for LruCache<K, V, S> {
-    #[inline]
     fn clone(&self) -> Self {
         LruCache {
             map: self.map.clone(),
@@ -249,7 +239,6 @@ impl<K: Hash + Eq + Clone, V: Clone, S: BuildHasher + Clone> Clone for LruCache<
 }
 
 impl<K: Eq + Hash, V, S: BuildHasher> Extend<(K, V)> for LruCache<K, V, S> {
-    #[inline]
     fn extend<I: IntoIterator<Item = (K, V)>>(&mut self, iter: I) {
         for (k, v) in iter {
             self.insert(k, v);
@@ -261,7 +250,6 @@ impl<K, V, S> IntoIterator for LruCache<K, V, S> {
     type Item = (K, V);
     type IntoIter = IntoIter<K, V>;
 
-    #[inline]
     fn into_iter(self) -> IntoIter<K, V> {
         self.map.into_iter()
     }
@@ -271,7 +259,6 @@ impl<'a, K, V, S> IntoIterator for &'a LruCache<K, V, S> {
     type Item = (&'a K, &'a V);
     type IntoIter = Iter<'a, K, V>;
 
-    #[inline]
     fn into_iter(self) -> Iter<'a, K, V> {
         self.iter()
     }
@@ -281,7 +268,6 @@ impl<'a, K, V, S> IntoIterator for &'a mut LruCache<K, V, S> {
     type Item = (&'a K, &'a mut V);
     type IntoIter = IterMut<'a, K, V>;
 
-    #[inline]
     fn into_iter(self) -> IterMut<'a, K, V> {
         self.iter_mut()
     }

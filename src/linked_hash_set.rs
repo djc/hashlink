@@ -14,14 +14,12 @@ pub struct LinkedHashSet<T, S = DefaultHashBuilder> {
 }
 
 impl<T: Hash + Eq> LinkedHashSet<T, DefaultHashBuilder> {
-    #[inline]
     pub fn new() -> LinkedHashSet<T, DefaultHashBuilder> {
         LinkedHashSet {
             map: LinkedHashMap::new(),
         }
     }
 
-    #[inline]
     pub fn with_capacity(capacity: usize) -> LinkedHashSet<T, DefaultHashBuilder> {
         LinkedHashSet {
             map: LinkedHashMap::with_capacity(capacity),
@@ -35,7 +33,6 @@ impl<T, S> LinkedHashSet<T, S> {
         self.map.capacity()
     }
 
-    #[inline]
     pub fn iter(&self) -> Iter<'_, T> {
         Iter {
             iter: self.map.keys(),
@@ -52,19 +49,16 @@ impl<T, S> LinkedHashSet<T, S> {
         self.map.is_empty()
     }
 
-    #[inline]
     pub fn drain(&mut self) -> Drain<T> {
         Drain {
             iter: self.map.drain(),
         }
     }
 
-    #[inline]
     pub fn clear(&mut self) {
         self.map.clear()
     }
 
-    #[inline]
     pub fn retain<F>(&mut self, mut f: F)
     where
         F: FnMut(&T) -> bool,
@@ -78,14 +72,12 @@ where
     T: Eq + Hash,
     S: BuildHasher,
 {
-    #[inline]
     pub fn with_hasher(hasher: S) -> LinkedHashSet<T, S> {
         LinkedHashSet {
             map: LinkedHashMap::with_hasher(hasher),
         }
     }
 
-    #[inline]
     pub fn with_capacity_and_hasher(capacity: usize, hasher: S) -> LinkedHashSet<T, S> {
         LinkedHashSet {
             map: LinkedHashMap::with_capacity_and_hasher(capacity, hasher),
@@ -97,22 +89,18 @@ where
         self.map.hasher()
     }
 
-    #[inline]
     pub fn reserve(&mut self, additional: usize) {
         self.map.reserve(additional)
     }
 
-    #[inline]
     pub fn try_reserve(&mut self, additional: usize) -> Result<(), TryReserveError> {
         self.map.try_reserve(additional)
     }
 
-    #[inline]
     pub fn shrink_to_fit(&mut self) {
         self.map.shrink_to_fit()
     }
 
-    #[inline]
     pub fn difference<'a>(&'a self, other: &'a LinkedHashSet<T, S>) -> Difference<'a, T, S> {
         Difference {
             iter: self.iter(),
@@ -120,7 +108,6 @@ where
         }
     }
 
-    #[inline]
     pub fn symmetric_difference<'a>(
         &'a self,
         other: &'a LinkedHashSet<T, S>,
@@ -130,7 +117,6 @@ where
         }
     }
 
-    #[inline]
     pub fn intersection<'a>(&'a self, other: &'a LinkedHashSet<T, S>) -> Intersection<'a, T, S> {
         Intersection {
             iter: self.iter(),
@@ -138,7 +124,6 @@ where
         }
     }
 
-    #[inline]
     pub fn union<'a>(&'a self, other: &'a LinkedHashSet<T, S>) -> Union<'a, T, S> {
         Union {
             iter: self.iter().chain(other.difference(self)),
@@ -186,17 +171,14 @@ where
             .0
     }
 
-    #[inline]
     pub fn is_disjoint(&self, other: &LinkedHashSet<T, S>) -> bool {
         self.iter().all(|v| !other.contains(v))
     }
 
-    #[inline]
     pub fn is_subset(&self, other: &LinkedHashSet<T, S>) -> bool {
         self.iter().all(|v| other.contains(v))
     }
 
-    #[inline]
     pub fn is_superset(&self, other: &LinkedHashSet<T, S>) -> bool {
         other.is_subset(self)
     }
@@ -297,7 +279,6 @@ where
         }
     }
 
-    #[inline]
     pub fn retain_with_order<F>(&mut self, mut f: F)
     where
         F: FnMut(&T) -> bool,
@@ -307,7 +288,6 @@ where
 }
 
 impl<T: Hash + Eq + Clone, S: BuildHasher + Clone> Clone for LinkedHashSet<T, S> {
-    #[inline]
     fn clone(&self) -> Self {
         let map = self.map.clone();
         Self { map }
@@ -319,7 +299,6 @@ where
     T: Eq + Hash,
     S: BuildHasher,
 {
-    #[inline]
     fn eq(&self, other: &Self) -> bool {
         self.len() == other.len() && self.iter().eq(other)
     }
@@ -330,7 +309,6 @@ where
     T: Eq + Hash,
     S: BuildHasher,
 {
-    #[inline]
     fn hash<H: Hasher>(&self, state: &mut H) {
         for e in self {
             e.hash(state);
@@ -349,7 +327,6 @@ impl<T, S> fmt::Debug for LinkedHashSet<T, S>
 where
     T: fmt::Debug,
 {
-    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_set().entries(self.iter()).finish()
     }
@@ -360,7 +337,6 @@ where
     T: Eq + Hash,
     S: BuildHasher + Default,
 {
-    #[inline]
     fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> LinkedHashSet<T, S> {
         let mut set = LinkedHashSet::with_hasher(Default::default());
         set.extend(iter);
@@ -373,7 +349,6 @@ where
     T: Eq + Hash,
     S: BuildHasher,
 {
-    #[inline]
     fn extend<I: IntoIterator<Item = T>>(&mut self, iter: I) {
         self.map.extend(iter.into_iter().map(|k| (k, ())));
     }
@@ -384,7 +359,6 @@ where
     T: 'a + Eq + Hash + Copy,
     S: BuildHasher,
 {
-    #[inline]
     fn extend<I: IntoIterator<Item = &'a T>>(&mut self, iter: I) {
         self.extend(iter.into_iter().cloned());
     }
@@ -394,7 +368,6 @@ impl<T, S> Default for LinkedHashSet<T, S>
 where
     S: Default,
 {
-    #[inline]
     fn default() -> LinkedHashSet<T, S> {
         LinkedHashSet {
             map: LinkedHashMap::default(),
@@ -409,7 +382,6 @@ where
 {
     type Output = LinkedHashSet<T, S>;
 
-    #[inline]
     fn bitor(self, rhs: &LinkedHashSet<T, S>) -> LinkedHashSet<T, S> {
         self.union(rhs).cloned().collect()
     }
@@ -422,7 +394,6 @@ where
 {
     type Output = LinkedHashSet<T, S>;
 
-    #[inline]
     fn bitand(self, rhs: &LinkedHashSet<T, S>) -> LinkedHashSet<T, S> {
         self.intersection(rhs).cloned().collect()
     }
@@ -435,7 +406,6 @@ where
 {
     type Output = LinkedHashSet<T, S>;
 
-    #[inline]
     fn bitxor(self, rhs: &LinkedHashSet<T, S>) -> LinkedHashSet<T, S> {
         self.symmetric_difference(rhs).cloned().collect()
     }
@@ -448,7 +418,6 @@ where
 {
     type Output = LinkedHashSet<T, S>;
 
-    #[inline]
     fn sub(self, rhs: &LinkedHashSet<T, S>) -> LinkedHashSet<T, S> {
         self.difference(rhs).cloned().collect()
     }
@@ -488,7 +457,6 @@ impl<'a, T, S> IntoIterator for &'a LinkedHashSet<T, S> {
     type Item = &'a T;
     type IntoIter = Iter<'a, T>;
 
-    #[inline]
     fn into_iter(self) -> Iter<'a, T> {
         self.iter()
     }
@@ -498,7 +466,6 @@ impl<T, S> IntoIterator for LinkedHashSet<T, S> {
     type Item = T;
     type IntoIter = IntoIter<T>;
 
-    #[inline]
     fn into_iter(self) -> IntoIter<T> {
         IntoIter {
             iter: self.map.into_iter(),
@@ -507,7 +474,6 @@ impl<T, S> IntoIterator for LinkedHashSet<T, S> {
 }
 
 impl<'a, K> Clone for Iter<'a, K> {
-    #[inline]
     fn clone(&self) -> Iter<'a, K> {
         Iter {
             iter: self.iter.clone(),
@@ -538,7 +504,6 @@ impl<'a, T> DoubleEndedIterator for Iter<'a, T> {
 }
 
 impl<K: fmt::Debug> fmt::Debug for Iter<'_, K> {
-    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_list().entries(self.clone()).finish()
     }
@@ -591,7 +556,6 @@ impl<K> DoubleEndedIterator for Drain<'_, K> {
 impl<K> ExactSizeIterator for Drain<'_, K> {}
 
 impl<'a, T, S> Clone for Intersection<'a, T, S> {
-    #[inline]
     fn clone(&self) -> Intersection<'a, T, S> {
         Intersection {
             iter: self.iter.clone(),
@@ -633,14 +597,12 @@ where
     T: fmt::Debug + Eq + Hash,
     S: BuildHasher,
 {
-    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_list().entries(self.clone()).finish()
     }
 }
 
 impl<'a, T, S> Clone for Difference<'a, T, S> {
-    #[inline]
     fn clone(&self) -> Difference<'a, T, S> {
         Difference {
             iter: self.iter.clone(),
@@ -682,14 +644,12 @@ where
     T: fmt::Debug + Eq + Hash,
     S: BuildHasher,
 {
-    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_list().entries(self.clone()).finish()
     }
 }
 
 impl<'a, T, S> Clone for SymmetricDifference<'a, T, S> {
-    #[inline]
     fn clone(&self) -> SymmetricDifference<'a, T, S> {
         SymmetricDifference {
             iter: self.iter.clone(),
@@ -720,14 +680,12 @@ where
     T: fmt::Debug + Eq + Hash,
     S: BuildHasher,
 {
-    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_list().entries(self.clone()).finish()
     }
 }
 
 impl<'a, T, S> Clone for Union<'a, T, S> {
-    #[inline]
     fn clone(&self) -> Union<'a, T, S> {
         Union {
             iter: self.iter.clone(),
@@ -740,7 +698,6 @@ where
     T: fmt::Debug + Eq + Hash,
     S: BuildHasher,
 {
-    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_list().entries(self.clone()).finish()
     }
