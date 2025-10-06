@@ -118,7 +118,7 @@ impl<K, V, S> LinkedHashMap<K, V, S> {
     }
 
     #[inline]
-    pub fn iter(&self) -> Iter<K, V> {
+    pub fn iter(&self) -> Iter<'_, K, V> {
         let (head, tail) = if let Some(values) = self.values {
             unsafe {
                 let ValueLinks { next, prev } = values.as_ref().links.value;
@@ -137,7 +137,7 @@ impl<K, V, S> LinkedHashMap<K, V, S> {
     }
 
     #[inline]
-    pub fn iter_mut(&mut self) -> IterMut<K, V> {
+    pub fn iter_mut(&mut self) -> IterMut<'_, K, V> {
         let (head, tail) = if let Some(values) = self.values {
             unsafe {
                 let ValueLinks { next, prev } = values.as_ref().links.value;
@@ -183,17 +183,17 @@ impl<K, V, S> LinkedHashMap<K, V, S> {
     }
 
     #[inline]
-    pub fn keys(&self) -> Keys<K, V> {
+    pub fn keys(&self) -> Keys<'_, K, V> {
         Keys { inner: self.iter() }
     }
 
     #[inline]
-    pub fn values(&self) -> Values<K, V> {
+    pub fn values(&self) -> Values<'_, K, V> {
         Values { inner: self.iter() }
     }
 
     #[inline]
-    pub fn values_mut(&mut self) -> ValuesMut<K, V> {
+    pub fn values_mut(&mut self) -> ValuesMut<'_, K, V> {
         ValuesMut {
             inner: self.iter_mut(),
         }
@@ -506,7 +506,7 @@ where
     }
 
     // Returns the `CursorMut` over the _guard_ node.
-    fn cursor_mut(&mut self) -> CursorMut<K, V, S> {
+    fn cursor_mut(&mut self) -> CursorMut<'_, K, V, S> {
         unsafe { ensure_guard_node(&mut self.values) };
         CursorMut {
             cur: self.values.as_ptr(),
@@ -522,7 +522,7 @@ where
     /// Note: The `CursorMut` is pointing to the _guard_ node in an empty `LinkedHashMap` and
     ///       will always return `None` as its current element, regardless of any move in any
     ///       direction.
-    pub fn cursor_front_mut(&mut self) -> CursorMut<K, V, S> {
+    pub fn cursor_front_mut(&mut self) -> CursorMut<'_, K, V, S> {
         let mut c = self.cursor_mut();
         c.move_next();
         c
@@ -533,7 +533,7 @@ where
     /// Note: The `CursorMut` is pointing to the _guard_ node in an empty `LinkedHashMap` and
     ///       will always return `None` as its current element, regardless of any move in any
     ///       direction.
-    pub fn cursor_back_mut(&mut self) -> CursorMut<K, V, S> {
+    pub fn cursor_back_mut(&mut self) -> CursorMut<'_, K, V, S> {
         let mut c = self.cursor_mut();
         c.move_prev();
         c
