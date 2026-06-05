@@ -482,17 +482,22 @@ where
                 let mut cur = values.as_ref().links.value.next;
                 while cur != values {
                     let next = cur.as_ref().links.value.next;
+                    // Compute the hash before invoking the callback. The callback
+                    // only receives `&K`, but interior mutability could change the
+                    // key's hash or equality, and this node is stored in the table
+                    // under its *original* hash.
+                    let hash = hash_key(&self.hash_builder, (*cur.as_ptr()).key_ref());
                     let filter = {
                         let (k, v) = (*cur.as_ptr()).entry_mut();
                         !f(k, v)
                     };
                     if filter {
-                        let k = (*cur.as_ptr()).key_ref();
-                        let hash = hash_key(&self.hash_builder, k);
-                        self.table
-                            .find_entry(hash, |o| (*o).as_ref().key_ref().eq(k))
-                            .unwrap()
-                            .remove();
+                        // Remove the table entry pointing at *this* node, matching
+                        // by pointer identity rather than key equality: the callback
+                        // may have mutated the key to compare equal to a different
+                        // entry, which would otherwise leave the table referencing a
+                        // freed node.
+                        self.table.find_entry(hash, |o| *o == cur).unwrap().remove();
                         drop_filtered_values.drop_later(cur);
                     }
                     cur = next;
