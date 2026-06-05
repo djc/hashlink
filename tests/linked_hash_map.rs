@@ -1,3 +1,9 @@
+use std::{
+    cell::Cell,
+    panic::{catch_unwind, AssertUnwindSafe},
+    rc::Rc,
+};
+
 use hashlink::{linked_hash_map, LinkedHashMap};
 
 #[allow(dead_code)]
@@ -819,4 +825,46 @@ fn test_cursor_back_mut() {
     let mut cursor = map.cursor_back_mut();
     assert!(cursor.current().is_some());
     assert_eq!(cursor.current().unwrap().1, &mut 3);
+}
+
+// Regression test for https://github.com/djc/hashlink/issues/43
+//
+// A panic while dropping an entry during `clear` must not leave a moved-out node reachable
+// from the value list, which would cause its entry to be dropped again.
+#[test]
+fn test_clear_panic_safe() {
+    struct PanicOnDrop {
+        should_panic: Rc<Cell<bool>>,
+    }
+
+    impl Drop for PanicOnDrop {
+        fn drop(&mut self) {
+            if self.should_panic.replace(false) {
+                panic!("intentional panic while clearing LinkedHashMap");
+            }
+        }
+    }
+
+    let should_panic = Rc::new(Cell::new(true));
+    let mut map = LinkedHashMap::new();
+    map.insert(
+        1,
+        PanicOnDrop {
+            should_panic: Rc::clone(&should_panic),
+        },
+    );
+    map.insert(
+        2,
+        PanicOnDrop {
+            should_panic: Rc::clone(&should_panic),
+        },
+    );
+
+    let result = catch_unwind(AssertUnwindSafe(|| map.clear()));
+    assert!(result.is_err());
+    should_panic.set(false);
+
+    // Dropping (or reusing) the map after the caught panic must not traverse a
+    // stale, moved-out node.
+    drop(map);
 }
