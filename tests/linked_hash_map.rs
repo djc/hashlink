@@ -1,5 +1,6 @@
 use std::{
-    cell::Cell,
+    cell::{Cell, RefCell},
+    hash::{Hash, Hasher},
     panic::{catch_unwind, AssertUnwindSafe},
     rc::Rc,
 };
@@ -867,4 +868,59 @@ fn test_clear_panic_safe() {
     // Dropping (or reusing) the map after the caught panic must not traverse a
     // stale, moved-out node.
     drop(map);
+}
+
+// Regression test for https://github.com/djc/hashlink/issues/42
+//
+// A key that changes its hash/equality through interior mutability inside the
+// `retain_with_order` callback must not make the method remove a different table entry than the
+// node it frees, which would leave the table referencing a freed node.
+#[test]
+fn test_retain_with_order_key_mutation_sound() {
+    #[derive(Debug)]
+    struct Key(RefCell<String>);
+
+    impl Key {
+        fn new(value: &str) -> Self {
+            Self(RefCell::new(value.to_owned()))
+        }
+
+        fn set(&self, value: &str) {
+            *self.0.borrow_mut() = value.to_owned();
+        }
+    }
+
+    impl PartialEq for Key {
+        fn eq(&self, other: &Self) -> bool {
+            self.0.borrow().as_str() == other.0.borrow().as_str()
+        }
+    }
+
+    impl Eq for Key {}
+
+    impl Hash for Key {
+        fn hash<H: Hasher>(&self, state: &mut H) {
+            self.0.borrow().hash(state);
+        }
+    }
+
+    let mut map = LinkedHashMap::new();
+    map.insert(Key::new("a"), 1);
+    map.insert(Key::new("b"), 2);
+
+    // The callback mutates the first key to compare equal to the second, then
+    // asks to drop it.
+    let mut first = true;
+    map.retain_with_order(|key, _| {
+        if first {
+            first = false;
+            key.set("b");
+            false
+        } else {
+            true
+        }
+    });
+
+    // Looking up a stale key must not dereference a freed node.
+    let _ = map.contains_key(&Key::new("a"));
 }
