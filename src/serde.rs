@@ -5,9 +5,9 @@ use core::{
 };
 
 use serde::{
+    Deserialize, Deserializer, Serialize, Serializer,
     de::{MapAccess, SeqAccess, Visitor},
     ser::{SerializeMap, SerializeSeq},
-    Deserialize, Deserializer, Serialize, Serializer,
 };
 
 use crate::{LinkedHashMap, LinkedHashSet};

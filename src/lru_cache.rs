@@ -4,8 +4,8 @@ use core::{
     hash::{BuildHasher, Hash},
 };
 
-use crate::linked_hash_map::{self, LinkedHashMap};
 use crate::DefaultHashBuilder;
+use crate::linked_hash_map::{self, LinkedHashMap};
 
 pub use crate::linked_hash_map::{
     Drain, Entry, IntoIter, Iter, IterMut, OccupiedEntry, RawEntryBuilder, RawEntryBuilderMut,

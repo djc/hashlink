@@ -4,7 +4,7 @@ use std::hash::BuildHasherDefault;
 
 use hashlink::{LinkedHashMap, LinkedHashSet};
 use rustc_hash::FxHasher;
-use serde_test::{assert_tokens, Token};
+use serde_test::{Token, assert_tokens};
 
 #[test]
 fn map_serde_tokens_empty() {
