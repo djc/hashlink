@@ -6,8 +6,8 @@ use core::{
     ops::{BitAnd, BitOr, BitXor, Sub},
 };
 
-use crate::linked_hash_map::{self, LinkedHashMap, TryReserveError};
 use crate::DefaultHashBuilder;
+use crate::linked_hash_map::{self, LinkedHashMap, TryReserveError};
 
 pub struct LinkedHashSet<T, S = DefaultHashBuilder> {
     map: LinkedHashMap<T, (), S>,
