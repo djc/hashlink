@@ -2310,9 +2310,7 @@ where
     S: BuildHasher,
     Q: Hash + ?Sized,
 {
-    let mut hasher = s.build_hasher();
-    k.hash(&mut hasher);
-    hasher.finish()
+    s.hash_one(k)
 }
 
 // We do not drop the key and value when a value is filtered from the map during the call to
