@@ -1,7 +1,7 @@
 [package]
 name = "hashlink"
 version = "0.11.1"
-edition = "2018"
+edition = "2021"
 description = "HashMap-like containers that hold their key-value pairs in a user controllable order"
 repository = "https://github.com/djc/hashlink"
 documentation = "https://docs.rs/hashlink"
