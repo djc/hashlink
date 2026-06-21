@@ -272,6 +272,36 @@ where
     }
 
     #[inline]
+    pub fn back_entry(&mut self) -> Option<RawOccupiedEntryMut<'_, K, V, S>> {
+        if self.is_empty() {
+            return None;
+        }
+        unsafe {
+            let last_key = (&*(*self.values.as_ptr()).links.value.prev.as_ptr()).key_ref();
+            let RawEntryMut::Occupied(occu) = self.raw_entry_mut().from_key(last_key) else {
+                unreachable!("the back entry's key was not found in the hashtable")
+            };
+
+            Some(occu)
+        }
+    }
+
+    #[inline]
+    pub fn front_entry(&mut self) -> Option<RawOccupiedEntryMut<'_, K, V, S>> {
+        if self.is_empty() {
+            return None;
+        }
+        unsafe {
+            let first_key = (&*((*self.values.as_ptr()).links.value.next.as_ptr())).key_ref();
+            let RawEntryMut::Occupied(occu) = self.raw_entry_mut().from_key(first_key) else {
+                unreachable!("the front entry's key was not found in the hashtable")
+            };
+
+            Some(occu)
+        }
+    }
+
+    #[inline]
     pub fn get<Q>(&self, k: &Q) -> Option<&V>
     where
         K: Borrow<Q>,
@@ -875,6 +905,16 @@ impl<'a, K, V, S> OccupiedEntry<'a, K, V, S> {
         self.raw_entry.cursor_mut()
     }
 
+    /// Returns a `RawOccupiedEntryMut` over the current entry.
+    #[inline]
+    pub fn raw_entry_mut(self) -> RawOccupiedEntryMut<'a, K, V, S>
+    where
+        K: Eq + Hash,
+        S: BuildHasher,
+    {
+        self.raw_entry
+    }
+
     /// Replaces the entry's key with the key provided to `LinkedHashMap::entry`, and replaces the
     /// entry's value with the given `value` parameter.
     ///
@@ -926,6 +966,30 @@ impl<'a, K, V, S> VacantEntry<'a, K, V, S> {
         S: BuildHasher,
     {
         self.raw_entry.insert(self.key, value).1
+    }
+
+    /// Insert's the key for this vacant entry paired with the given value as a new entry at the
+    /// *back* of the internal linked list.
+    /// This function then also then returns the OccupiedEntry pointing to the inserted element.
+    pub fn insert_entry(self, value: V) -> RawOccupiedEntryMut<'a, K, V, S>
+    where
+        K: Hash,
+        S: BuildHasher,
+    {
+        //We cannot return OccupiedEntry only RawOccupiedEntryMut because
+        //OccupiedEntry has api methods like replace_key which assume that we hold a copy of the key.
+        //We certainly do not hold a copy of the key anymore after inserting it.
+        self.raw_entry.insert_entry(self.key, value)
+    }
+
+    /// Returns a `RawVacantEntryMut` over the current entry.
+    #[inline]
+    pub fn raw_entry_mut(self) -> RawVacantEntryMut<'a, K, V, S>
+    where
+        K: Eq + Hash,
+        S: BuildHasher,
+    {
+        self.raw_entry
     }
 }
 
@@ -1257,6 +1321,21 @@ impl<'a, K, V, S> RawVacantEntryMut<'a, K, V, S> {
     where
         S: BuildHasher,
     {
+        self.insert_entry_with_hasher(hash, key, value, hasher)
+            .into_key_value()
+    }
+
+    #[inline]
+    pub fn insert_entry_with_hasher(
+        self,
+        hash: u64,
+        key: K,
+        value: V,
+        hasher: impl Fn(&K) -> u64,
+    ) -> RawOccupiedEntryMut<'a, K, V, S>
+    where
+        S: BuildHasher,
+    {
         unsafe {
             ensure_guard_node(self.values);
             let mut new_node = allocate_node(self.free);
@@ -1266,12 +1345,40 @@ impl<'a, K, V, S> RawVacantEntryMut<'a, K, V, S> {
             let node = self
                 .entry
                 .into_table()
-                .insert_unique(hash, new_node, move |k| hasher((*k).as_ref().key_ref()))
-                .into_mut();
+                .insert_unique(hash, new_node, move |k| hasher((*k).as_ref().key_ref()));
 
-            let (key, value) = (*node.as_ptr()).entry_mut();
-            (key, value)
+            RawOccupiedEntryMut {
+                hash_builder: self.hash_builder,
+                free: self.free,
+                values: self.values,
+                entry: node,
+            }
         }
+    }
+
+    #[inline]
+    pub fn insert_entry_hashed_nocheck(
+        self,
+        hash: u64,
+        key: K,
+        value: V,
+    ) -> RawOccupiedEntryMut<'a, K, V, S>
+    where
+        K: Hash,
+        S: BuildHasher,
+    {
+        let hash_builder = self.hash_builder;
+        self.insert_entry_with_hasher(hash, key, value, |k| hash_key(hash_builder, k))
+    }
+
+    #[inline]
+    pub fn insert_entry(self, key: K, value: V) -> RawOccupiedEntryMut<'a, K, V, S>
+    where
+        K: Hash,
+        S: BuildHasher,
+    {
+        let hash = hash_key(self.hash_builder, &key);
+        self.insert_entry_hashed_nocheck(hash, key, value)
     }
 }
 
@@ -1732,7 +1839,7 @@ pub struct CursorMut<'a, K, V, S> {
     table: &'a mut hashbrown::HashTable<NonNull<Node<K, V>>>,
 }
 
-impl<K, V, S> CursorMut<'_, K, V, S> {
+impl<'a, K, V, S> CursorMut<'a, K, V, S> {
     /// Returns an `Option` of the current element in the list, provided it is not the
     /// _guard_ node, and `None` overwise.
     #[inline]
@@ -1740,6 +1847,41 @@ impl<K, V, S> CursorMut<'_, K, V, S> {
         unsafe {
             let at = NonNull::new_unchecked(self.cur);
             self.peek(at)
+        }
+    }
+
+    #[inline]
+    pub fn current_entry(self) -> Result<RawOccupiedEntryMut<'a, K, V, S>, Self>
+    where
+        K: Eq + Hash,
+        S: BuildHasher,
+    {
+        unsafe {
+            let Some(values) = self.values else {
+                return Err(self);
+            };
+
+            if values.as_ptr() == self.cur {
+                return Err(self);
+            }
+
+            let key = (*self.cur).key_ref();
+
+            let hash = hash_key(self.hash_builder, &key);
+
+            let Ok(entry) = self
+                .table
+                .find_entry(hash, |o| (*o).as_ref().key_ref().eq(key))
+            else {
+                unreachable!("current entry not found in hash table");
+            };
+
+            Ok(RawOccupiedEntryMut {
+                hash_builder: self.hash_builder,
+                free: self.free,
+                values: self.values,
+                entry,
+            })
         }
     }
 
