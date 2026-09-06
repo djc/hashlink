@@ -1071,3 +1071,31 @@ fn test_retain_with_order_key_mutation_sound() {
     // Looking up a stale key must not dereference a freed node.
     let _ = map.contains_key(&Key::new("a"));
 }
+
+#[test]
+pub fn test_insert_front() {
+    let mut under_test = LinkedHashMap::new();
+    under_test.insert_front(1, 1);
+    assert!(under_test.contains_key(&1));
+    assert_eq!(under_test.front(), Some((&1, &1)));
+    assert_eq!(under_test.back(), Some((&1, &1)));
+
+    under_test.insert(2, 2);
+    assert!(under_test.contains_key(&2));
+    assert_eq!(under_test.front(), Some((&1, &1)));
+    assert_eq!(under_test.back(), Some((&2, &2)));
+    under_test.insert_front(3, 3);
+    assert!(under_test.contains_key(&3));
+    assert_eq!(under_test.front(), Some((&3, &3)));
+    assert_eq!(under_test.back(), Some((&2, &2)));
+
+    let elems = under_test.keys().collect::<Vec<_>>();
+    assert_eq!(elems, vec![&3, &1, &2]);
+
+    assert_eq!(under_test.insert_front(2, 4), Some(2));
+    assert_eq!(under_test.front(), Some((&2, &4)));
+    assert_eq!(under_test.back(), Some((&1, &1)));
+
+    let elems = under_test.keys().collect::<Vec<_>>();
+    assert_eq!(elems, vec![&2, &3, &1]);
+}
